@@ -1,0 +1,734 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#f59e0b" />
+  <title>おみくじ記録アプリ</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root {
+      --bg1: #fff7ed;
+      --bg2: #fffbeb;
+      --card: rgba(255,255,255,.9);
+      --text: #1f2937;
+      --muted: #6b7280;
+      --line: #e5e7eb;
+      --accent: #f59e0b;
+      --accent2: #fb923c;
+      --danger: #dc2626;
+      --shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+      --radius: 22px;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Hiragino Sans", "Noto Sans JP", sans-serif;
+      color: var(--text);
+      background: linear-gradient(180deg, var(--bg1), #fff, var(--bg2));
+      min-height: 100vh;
+    }
+
+    .wrap {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 16px;
+    }
+
+    .hero, .card {
+      background: var(--card);
+      border: 1px solid rgba(255,255,255,.75);
+      border-radius: 28px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(8px);
+    }
+
+    .hero {
+      padding: 20px;
+      margin-bottom: 16px;
+    }
+
+    h1 {
+      margin: 0 0 6px;
+      font-size: 28px;
+    }
+
+    .sub {
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    .hero-top {
+      display: flex;
+      gap: 12px;
+      justify-content: space-between;
+      align-items: flex-start;
+      flex-wrap: wrap;
+    }
+
+    .pill-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .pill {
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 8px 12px;
+      background: white;
+      font-size: 12px;
+    }
+
+    .tabs {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      padding: 8px;
+      background: rgba(255,255,255,.8);
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      margin-bottom: 16px;
+      position: sticky;
+      top: 8px;
+      z-index: 10;
+      backdrop-filter: blur(10px);
+    }
+
+    .tab-btn {
+      border: 0;
+      background: transparent;
+      border-radius: 16px;
+      padding: 12px 10px;
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--muted);
+    }
+
+    .tab-btn.active {
+      background: linear-gradient(135deg, #fff, #fff7ed);
+      color: #92400e;
+      box-shadow: inset 0 0 0 1px #fed7aa;
+    }
+
+    .panel { display: none; }
+    .panel.active { display: block; }
+
+    .card { padding: 18px; }
+    .section-title { font-size: 20px; margin: 0 0 16px; }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1.05fr .95fr;
+      gap: 20px;
+    }
+
+    .upload-box {
+      border: 1px dashed #d1d5db;
+      border-radius: var(--radius);
+      background: #f8fafc;
+      padding: 14px;
+    }
+
+    .preview {
+      margin-top: 14px;
+      border-radius: var(--radius);
+      overflow: hidden;
+      border: 1px solid var(--line);
+      background: white;
+      min-height: 280px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #9ca3af;
+      text-align: center;
+    }
+
+    .preview img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      max-height: 420px;
+    }
+
+    .field { margin-bottom: 14px; }
+    .label {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .input, .select, .textarea, .button {
+      width: 100%;
+      border-radius: 18px;
+      border: 1px solid var(--line);
+      background: white;
+      padding: 13px 14px;
+      font-size: 16px;
+    }
+
+    .textarea { min-height: 120px; resize: vertical; }
+
+    .button {
+      cursor: pointer;
+      font-weight: 700;
+      transition: .2s ease;
+    }
+
+    .button.primary {
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      color: white;
+      border: none;
+    }
+
+    .button.secondary {
+      background: white;
+      color: var(--text);
+    }
+
+    .button.ghost {
+      background: transparent;
+      color: var(--muted);
+    }
+
+    .button-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .muted {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.6;
+      margin-top: 6px;
+    }
+
+    .records-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+
+    .record-card {
+      overflow: hidden;
+      padding: 0;
+    }
+
+    .record-image {
+      aspect-ratio: 4 / 3;
+      background: #f3f4f6;
+    }
+
+    .record-image img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .record-body { padding: 14px; }
+
+    .record-head {
+      display: flex;
+      gap: 10px;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 10px;
+    }
+
+    .record-title {
+      font-size: 17px;
+      font-weight: 700;
+      margin: 0 0 4px;
+    }
+
+    .record-date {
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .badge {
+      white-space: nowrap;
+      border-radius: 999px;
+      padding: 7px 10px;
+      font-size: 12px;
+      font-weight: 700;
+      border: 1px solid transparent;
+    }
+
+    .fortune-大吉 { background: #dcfce7; color: #166534; border-color: #86efac; }
+    .fortune-半吉 { background: #ecfccb; color: #4d7c0f; border-color: #bef264; }
+    .fortune-吉 { background: #e0f2fe; color: #075985; border-color: #7dd3fc; }
+    .fortune-中吉 { background: #cffafe; color: #155e75; border-color: #67e8f9; }
+    .fortune-小吉 { background: #fef3c7; color: #92400e; border-color: #fcd34d; }
+    .fortune-末吉 { background: #ffedd5; color: #9a3412; border-color: #fdba74; }
+    .fortune-凶 { background: #ffe4e6; color: #9f1239; border-color: #fda4af; }
+    .fortune-大凶 { background: #fee2e2; color: #991b1b; border-color: #fca5a5; }
+
+    .record-memo {
+      color: #475569;
+      font-size: 14px;
+      line-height: 1.7;
+      white-space: pre-wrap;
+      word-break: break-word;
+      margin-bottom: 8px;
+    }
+
+    .empty {
+      min-height: 260px;
+      display: grid;
+      place-items: center;
+      text-align: center;
+      color: var(--muted);
+    }
+
+    .chart-wrap {
+      position: relative;
+      min-height: 360px;
+    }
+
+    .footer-note {
+      margin-top: 14px;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    @media (max-width: 900px) {
+      .form-grid, .records-grid { grid-template-columns: 1fr; }
+      h1 { font-size: 24px; }
+      .tabs { top: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="hero">
+      <div class="hero-top">
+        <div>
+          <h1>おみくじ記録アプリ</h1>
+          <div class="sub">おみくじの写真、神社仏閣名、記録日、運勢、メモをまとめて保存。運勢の推移はグラフで見返せます。</div>
+        </div>
+        <div class="pill-row">
+          <div class="pill"><span id="recordCount">0</span>件保存中</div>
+          <button class="button secondary" id="exportBtn" type="button" style="width:auto;padding:10px 14px;">JSON書き出し</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="tabs" role="tablist" aria-label="アプリタブ">
+      <button class="tab-btn active" data-tab="record" type="button">記録する</button>
+      <button class="tab-btn" data-tab="list" type="button">一覧</button>
+      <button class="tab-btn" data-tab="graph" type="button">運勢グラフ</button>
+    </div>
+
+    <section class="panel active" id="panel-record">
+      <div class="card">
+        <h2 class="section-title">新しい記録を追加</h2>
+        <div class="form-grid">
+          <div>
+            <div class="field">
+              <label class="label" for="photoInput">おみくじ写真</label>
+              <div class="upload-box">
+                <input id="photoInput" type="file" accept="image/*" capture="environment" class="sr-only" />
+                <button class="button secondary" id="photoBtn" type="button">写真を選ぶ / 撮影する</button>
+                <div class="muted">スマホのChromeではカメラ起動候補が表示されることがあります。</div>
+                <div class="preview" id="previewBox">
+                  <div>
+                    <div style="font-size:40px;line-height:1;">🖼️</div>
+                    <div style="margin-top:8px;font-size:14px;">写真プレビュー</div>
+                  </div>
+                </div>
+                <div class="muted" id="fileNameText"></div>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <div class="field">
+              <label class="label" for="templeName">神社仏閣名</label>
+              <input class="input" id="templeName" type="text" placeholder="例：浅草寺" />
+            </div>
+
+            <div class="field">
+              <label class="label" for="recordDate">記録日</label>
+              <input class="input" id="recordDate" type="date" />
+              <div class="muted">写真を選んだ日に自動セットされます。あとから変更もできます。</div>
+            </div>
+
+            <div class="field">
+              <label class="label" for="fortuneSelect">運勢</label>
+              <select class="select" id="fortuneSelect">
+                <option>大吉</option>
+                <option>半吉</option>
+                <option selected>吉</option>
+                <option>中吉</option>
+                <option>小吉</option>
+                <option>末吉</option>
+                <option>凶</option>
+                <option>大凶</option>
+              </select>
+            </div>
+
+            <div class="field">
+              <label class="label" for="memoInput">メモ</label>
+              <textarea class="textarea" id="memoInput" placeholder="気になった言葉、その日の出来事、感想など"></textarea>
+            </div>
+
+            <div class="button-row">
+              <button class="button primary" id="saveBtn" type="button">保存する</button>
+              <button class="button secondary" id="clearBtn" type="button">クリア</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel" id="panel-list">
+      <div id="recordsArea"></div>
+    </section>
+
+    <section class="panel" id="panel-graph">
+      <div class="card">
+        <h2 class="section-title">運勢の推移</h2>
+        <div id="graphEmpty" class="empty">記録がたまると、ここに運勢の推移が表示されます。</div>
+        <div id="graphArea" class="chart-wrap" style="display:none;">
+          <canvas id="fortuneChart"></canvas>
+        </div>
+        <div class="footer-note">縦軸は大凶から大吉までを数値化しています。時系列で自分の運勢の流れを見返せます。</div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const STORAGE_KEY = 'omikuji-records-v1';
+    const fortuneLevels = {
+      '大凶': 1,
+      '凶': 2,
+      '末吉': 3,
+      '小吉': 4,
+      '中吉': 5,
+      '吉': 6,
+      '半吉': 7,
+      '大吉': 8,
+    };
+    const levelToFortune = {
+      1: '大凶',
+      2: '凶',
+      3: '末吉',
+      4: '小吉',
+      5: '中吉',
+      6: '吉',
+      7: '半吉',
+      8: '大吉',
+    };
+
+    const state = {
+      records: loadRecords(),
+      imageData: '',
+      imageName: '',
+      chart: null,
+    };
+
+    const els = {
+      tabs: document.querySelectorAll('.tab-btn'),
+      panels: {
+        record: document.getElementById('panel-record'),
+        list: document.getElementById('panel-list'),
+        graph: document.getElementById('panel-graph'),
+      },
+      recordCount: document.getElementById('recordCount'),
+      exportBtn: document.getElementById('exportBtn'),
+      photoInput: document.getElementById('photoInput'),
+      photoBtn: document.getElementById('photoBtn'),
+      previewBox: document.getElementById('previewBox'),
+      fileNameText: document.getElementById('fileNameText'),
+      templeName: document.getElementById('templeName'),
+      recordDate: document.getElementById('recordDate'),
+      fortuneSelect: document.getElementById('fortuneSelect'),
+      memoInput: document.getElementById('memoInput'),
+      saveBtn: document.getElementById('saveBtn'),
+      clearBtn: document.getElementById('clearBtn'),
+      recordsArea: document.getElementById('recordsArea'),
+      graphEmpty: document.getElementById('graphEmpty'),
+      graphArea: document.getElementById('graphArea'),
+      fortuneChart: document.getElementById('fortuneChart'),
+    };
+
+    function todayString() {
+      const d = new Date();
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${y}-${m}-${day}`;
+    }
+
+    function loadRecords() {
+      try {
+        return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+      } catch (e) {
+        return [];
+      }
+    }
+
+    function saveRecords() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state.records));
+    }
+
+    function switchTab(tabName) {
+      els.tabs.forEach(btn => btn.classList.toggle('active', btn.dataset.tab === tabName));
+      Object.entries(els.panels).forEach(([name, panel]) => {
+        panel.classList.toggle('active', name === tabName);
+      });
+      if (tabName === 'graph') renderChart();
+      if (tabName === 'list') renderList();
+    }
+
+    function updatePreview() {
+      if (!state.imageData) {
+        els.previewBox.innerHTML = `
+          <div>
+            <div style="font-size:40px;line-height:1;">🖼️</div>
+            <div style="margin-top:8px;font-size:14px;">写真プレビュー</div>
+          </div>`;
+        els.fileNameText.textContent = '';
+        return;
+      }
+      els.previewBox.innerHTML = `<img src="${state.imageData}" alt="おみくじ写真プレビュー">`;
+      els.fileNameText.textContent = state.imageName || '';
+    }
+
+    function resetForm() {
+      state.imageData = '';
+      state.imageName = '';
+      els.photoInput.value = '';
+      els.templeName.value = '';
+      els.recordDate.value = todayString();
+      els.fortuneSelect.value = '吉';
+      els.memoInput.value = '';
+      updatePreview();
+    }
+
+    function updateCount() {
+      els.recordCount.textContent = state.records.length;
+    }
+
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function renderList() {
+      updateCount();
+      if (!state.records.length) {
+        els.recordsArea.innerHTML = `
+          <div class="card empty">まだ記録がありません。最初のおみくじを登録してみてください。</div>`;
+        return;
+      }
+
+      const sorted = [...state.records].sort((a, b) => new Date(b.date) - new Date(a.date));
+      els.recordsArea.innerHTML = `<div class="records-grid">${sorted.map(record => `
+        <article class="card record-card">
+          <div class="record-image">
+            <img src="${record.imageData}" alt="${escapeHtml(record.name)}">
+          </div>
+          <div class="record-body">
+            <div class="record-head">
+              <div>
+                <div class="record-title">${escapeHtml(record.name)}</div>
+                <div class="record-date">${escapeHtml(record.date)}</div>
+              </div>
+              <div class="badge fortune-${record.fortune}">${escapeHtml(record.fortune)}</div>
+            </div>
+            ${record.memo ? `<div class="record-memo">${escapeHtml(record.memo)}</div>` : ''}
+            <div class="button-row" style="justify-content:flex-end;">
+              <button class="button ghost delete-btn" type="button" data-id="${record.id}" style="width:auto;padding:8px 10px;color:#64748b;">削除</button>
+            </div>
+          </div>
+        </article>
+      `).join('')}</div>`;
+
+      document.querySelectorAll('.delete-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const id = btn.dataset.id;
+          state.records = state.records.filter(r => r.id !== id);
+          saveRecords();
+          renderList();
+          renderChart();
+          updateCount();
+        });
+      });
+    }
+
+    function renderChart() {
+      if (!state.records.length) {
+        els.graphEmpty.style.display = 'grid';
+        els.graphArea.style.display = 'none';
+        if (state.chart) {
+          state.chart.destroy();
+          state.chart = null;
+        }
+        return;
+      }
+
+      const sorted = [...state.records]
+        .sort((a, b) => new Date(a.date) - new Date(b.date));
+
+      const labels = sorted.map(r => r.date);
+      const dataPoints = sorted.map(r => fortuneLevels[r.fortune] || null);
+      const detailLabels = sorted.map(r => `${r.fortune}（${r.name}）`);
+
+      els.graphEmpty.style.display = 'none';
+      els.graphArea.style.display = 'block';
+
+      if (state.chart) state.chart.destroy();
+
+      state.chart = new Chart(els.fortuneChart, {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [{
+            label: '運勢',
+            data: dataPoints,
+            borderWidth: 3,
+            tension: 0.25,
+            pointRadius: 5,
+            pointHoverRadius: 7,
+            fill: false,
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: {
+            mode: 'nearest',
+            intersect: false,
+          },
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                title(items) {
+                  return `日付: ${items[0].label}`;
+                },
+                label(context) {
+                  return detailLabels[context.dataIndex];
+                }
+              }
+            }
+          },
+          scales: {
+            y: {
+              min: 1,
+              max: 8,
+              ticks: {
+                stepSize: 1,
+                callback(value) {
+                  return levelToFortune[value] || '';
+                }
+              }
+            }
+          }
+        }
+      });
+    }
+
+    function exportJson() {
+      const blob = new Blob([JSON.stringify(state.records, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `omikuji-records-${todayString()}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    els.tabs.forEach(btn => {
+      btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+    });
+
+    els.photoBtn.addEventListener('click', () => els.photoInput.click());
+
+    els.photoInput.addEventListener('change', () => {
+      const file = els.photoInput.files && els.photoInput.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        state.imageData = String(reader.result || '');
+        state.imageName = file.name;
+        els.recordDate.value = todayString();
+        updatePreview();
+      };
+      reader.readAsDataURL(file);
+    });
+
+    els.saveBtn.addEventListener('click', () => {
+      const name = els.templeName.value.trim();
+      const date = els.recordDate.value;
+      const fortune = els.fortuneSelect.value;
+      const memo = els.memoInput.value.trim();
+
+      if (!state.imageData) {
+        alert('おみくじの写真を選んでください。');
+        return;
+      }
+      if (!name) {
+        alert('神社仏閣名を入力してください。');
+        return;
+      }
+      if (!date) {
+        alert('日付を入力してください。');
+        return;
+      }
+
+      state.records.unshift({
+        id: crypto.randomUUID(),
+        imageData: state.imageData,
+        imageName: state.imageName,
+        name,
+        date,
+        fortune,
+        memo,
+        createdAt: new Date().toISOString(),
+      });
+
+      saveRecords();
+      updateCount();
+      renderList();
+      renderChart();
+      resetForm();
+      switchTab('list');
+    });
+
+    els.clearBtn.addEventListener('click', resetForm);
+    els.exportBtn.addEventListener('click', exportJson);
+
+    els.recordDate.value = todayString();
+    updatePreview();
+    updateCount();
+    renderList();
+    renderChart();
+  </script>
+</body>
+</html>
