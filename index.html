@@ -1,10 +1,11 @@
 <!doctype html>
 <html lang="ja">
 <head>
-  <link rel="apple-touch-icon" href="appicon.png">
+  <link rel="apple-touch-icon" href="appicon.png?v=2">
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta name="theme-color" content="#f59e0b" />
+  <meta name="apple-mobile-web-app-title" content="くじレコ" />
   <title>くじレコ</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
@@ -156,6 +157,7 @@
     }
 
     .field { margin-bottom: 14px; }
+
     .label {
       display: block;
       margin-bottom: 8px;
@@ -207,6 +209,22 @@
       font-size: 12px;
       line-height: 1.6;
       margin-top: 6px;
+    }
+
+    .edit-banner {
+      display: none;
+      margin-bottom: 14px;
+      padding: 12px 14px;
+      border-radius: 18px;
+      background: #fff7ed;
+      border: 1px solid #fed7aa;
+      color: #9a3412;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .edit-banner.show {
+      display: block;
     }
 
     .records-grid {
@@ -329,7 +347,6 @@
         </div>
         <div class="pill-row">
           <div class="pill"><span id="recordCount">0</span>件保存中</div>
-          <button class="button secondary" id="exportBtn" type="button" style="width:auto;padding:10px 14px;">JSON書き出し</button>
         </div>
       </div>
     </div>
@@ -343,6 +360,11 @@
     <section class="panel active" id="panel-record">
       <div class="card">
         <h2 class="section-title">新しい記録を追加</h2>
+
+        <div class="edit-banner" id="editBanner">
+          編集中です。内容を直して「更新する」を押すと上書き保存されます。
+        </div>
+
         <div class="form-grid">
           <div>
             <div class="field">
@@ -446,6 +468,7 @@
       imageData: '',
       imageName: '',
       chart: null,
+      editingId: null,
     };
 
     const els = {
@@ -456,7 +479,6 @@
         graph: document.getElementById('panel-graph'),
       },
       recordCount: document.getElementById('recordCount'),
-      exportBtn: document.getElementById('exportBtn'),
       photoInput: document.getElementById('photoInput'),
       photoBtn: document.getElementById('photoBtn'),
       previewBox: document.getElementById('previewBox'),
@@ -471,6 +493,7 @@
       graphEmpty: document.getElementById('graphEmpty'),
       graphArea: document.getElementById('graphArea'),
       fortuneChart: document.getElementById('fortuneChart'),
+      editBanner: document.getElementById('editBanner'),
     };
 
     function todayString() {
@@ -516,15 +539,27 @@
       els.fileNameText.textContent = state.imageName || '';
     }
 
+    function updateFormMode() {
+      if (state.editingId) {
+        els.saveBtn.textContent = '更新する';
+        els.editBanner.classList.add('show');
+      } else {
+        els.saveBtn.textContent = '保存する';
+        els.editBanner.classList.remove('show');
+      }
+    }
+
     function resetForm() {
       state.imageData = '';
       state.imageName = '';
+      state.editingId = null;
       els.photoInput.value = '';
       els.templeName.value = '';
       els.recordDate.value = todayString();
       els.fortuneSelect.value = '吉';
       els.memoInput.value = '';
       updatePreview();
+      updateFormMode();
     }
 
     function updateCount() {
@@ -538,6 +573,23 @@
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#39;');
+    }
+
+    function startEdit(id) {
+      const record = state.records.find(r => r.id === id);
+      if (!record) return;
+
+      state.editingId = id;
+      state.imageData = record.imageData;
+      state.imageName = record.imageName || '';
+      els.templeName.value = record.name || '';
+      els.recordDate.value = record.date || todayString();
+      els.fortuneSelect.value = record.fortune || '吉';
+      els.memoInput.value = record.memo || '';
+      updatePreview();
+      updateFormMode();
+      switchTab('record');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
     function renderList() {
@@ -564,16 +616,28 @@
             </div>
             ${record.memo ? `<div class="record-memo">${escapeHtml(record.memo)}</div>` : ''}
             <div class="button-row" style="justify-content:flex-end;">
+              <button class="button ghost edit-btn" type="button" data-id="${record.id}" style="width:auto;padding:8px 10px;color:#92400e;">編集</button>
               <button class="button ghost delete-btn" type="button" data-id="${record.id}" style="width:auto;padding:8px 10px;color:#64748b;">削除</button>
             </div>
           </div>
         </article>
       `).join('')}</div>`;
 
+      document.querySelectorAll('.edit-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          startEdit(btn.dataset.id);
+        });
+      });
+
       document.querySelectorAll('.delete-btn').forEach(btn => {
         btn.addEventListener('click', () => {
           const id = btn.dataset.id;
           state.records = state.records.filter(r => r.id !== id);
+
+          if (state.editingId === id) {
+            resetForm();
+          }
+
           saveRecords();
           renderList();
           renderChart();
@@ -655,16 +719,6 @@
       });
     }
 
-    function exportJson() {
-      const blob = new Blob([JSON.stringify(state.records, null, 2)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `omikuji-records-${todayString()}.json`;
-      a.click();
-      URL.revokeObjectURL(url);
-    }
-
     els.tabs.forEach(btn => {
       btn.addEventListener('click', () => switchTab(btn.dataset.tab));
     });
@@ -703,16 +757,32 @@
         return;
       }
 
-      state.records.unshift({
-        id: crypto.randomUUID(),
-        imageData: state.imageData,
-        imageName: state.imageName,
-        name,
-        date,
-        fortune,
-        memo,
-        createdAt: new Date().toISOString(),
-      });
+      if (state.editingId) {
+        const target = state.records.find(r => r.id === state.editingId);
+        if (!target) {
+          alert('編集対象が見つかりませんでした。');
+          resetForm();
+          return;
+        }
+
+        target.imageData = state.imageData;
+        target.imageName = state.imageName;
+        target.name = name;
+        target.date = date;
+        target.fortune = fortune;
+        target.memo = memo;
+      } else {
+        state.records.unshift({
+          id: crypto.randomUUID(),
+          imageData: state.imageData,
+          imageName: state.imageName,
+          name,
+          date,
+          fortune,
+          memo,
+          createdAt: new Date().toISOString(),
+        });
+      }
 
       saveRecords();
       updateCount();
@@ -723,10 +793,10 @@
     });
 
     els.clearBtn.addEventListener('click', resetForm);
-    els.exportBtn.addEventListener('click', exportJson);
 
     els.recordDate.value = todayString();
     updatePreview();
+    updateFormMode();
     updateCount();
     renderList();
     renderChart();
