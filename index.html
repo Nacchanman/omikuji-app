@@ -1,257 +1,359 @@
 <!doctype html>
 <html lang="ja">
 <head>
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <link rel="apple-touch-icon" href="appicon.png?v=2">
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta name="theme-color" content="#f59e0b" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-title" content="くじレコ" />
+  <link rel="apple-touch-icon" href="appicon.png?v=2" />
   <title>くじレコ</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     :root {
       --bg1: #fff7ed;
       --bg2: #fffbeb;
-      --card: rgba(255,255,255,.9);
+      --card: rgba(255, 255, 255, .92);
       --text: #1f2937;
-      --muted: #6b7280;
+      --muted: #667085;
       --line: #e5e7eb;
       --accent: #f59e0b;
       --accent2: #fb923c;
       --danger: #dc2626;
-      --shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
-      --radius: 22px;
+      --danger-bg: #fef2f2;
+      --success: #15803d;
+      --success-bg: #f0fdf4;
+      --shadow: 0 18px 46px rgba(15, 23, 42, .1);
+      --shadow-soft: 0 8px 22px rgba(15, 23, 42, .07);
+      --radius: 24px;
+      --focus: 0 0 0 4px rgba(245, 158, 11, .22);
     }
 
     * { box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; }
+
     body {
       margin: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Hiragino Sans", "Noto Sans JP", sans-serif;
-      color: var(--text);
-      background: linear-gradient(180deg, var(--bg1), #fff, var(--bg2));
       min-height: 100vh;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(251, 146, 60, .22), transparent 32rem),
+        radial-gradient(circle at top right, rgba(245, 158, 11, .18), transparent 28rem),
+        linear-gradient(180deg, var(--bg1), #fff 46%, var(--bg2));
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Hiragino Sans", "Noto Sans JP", sans-serif;
+    }
+
+    button, input, select, textarea { font: inherit; }
+
+    button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
+      outline: none;
+      box-shadow: var(--focus);
     }
 
     .wrap {
-      max-width: 1100px;
+      width: min(1180px, 100%);
       margin: 0 auto;
-      padding: 16px;
+      padding: clamp(12px, 3vw, 28px);
     }
 
-    .hero, .card {
+    .hero, .card, .tabs {
       background: var(--card);
-      border: 1px solid rgba(255,255,255,.75);
-      border-radius: 28px;
+      border: 1px solid rgba(255, 255, 255, .78);
       box-shadow: var(--shadow);
-      backdrop-filter: blur(8px);
+      backdrop-filter: blur(12px);
     }
 
     .hero {
-      padding: 20px;
+      position: relative;
+      overflow: hidden;
       margin-bottom: 16px;
+      padding: clamp(20px, 4vw, 34px);
+      border-radius: 32px;
     }
 
-    h1 {
-      margin: 0 0 6px;
-      font-size: 28px;
-    }
-
-    .sub {
-      color: var(--muted);
-      font-size: 14px;
-      line-height: 1.6;
+    .hero::after {
+      content: "";
+      position: absolute;
+      right: -74px;
+      top: -72px;
+      width: 210px;
+      height: 210px;
+      border-radius: 999px;
+      background: rgba(245, 158, 11, .16);
+      pointer-events: none;
     }
 
     .hero-top {
-      display: flex;
-      gap: 12px;
-      justify-content: space-between;
-      align-items: flex-start;
-      flex-wrap: wrap;
+      position: relative;
+      z-index: 1;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 20px;
+      align-items: start;
     }
 
-    .pill-row {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 10px;
+      color: #9a3412;
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: .05em;
     }
 
-    .pill {
-      border: 1px solid var(--line);
-      border-radius: 999px;
-      padding: 8px 12px;
-      background: white;
+    h1 {
+      margin: 0 0 8px;
+      font-size: clamp(28px, 4vw, 42px);
+      letter-spacing: -.04em;
+      line-height: 1.08;
+    }
+
+    .sub {
+      max-width: 720px;
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 1.8;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(84px, 1fr));
+      gap: 10px;
+      min-width: 330px;
+    }
+
+    .stat {
+      border: 1px solid #fed7aa;
+      border-radius: 20px;
+      padding: 12px;
+      background: rgba(255, 247, 237, .86);
+    }
+
+    .stat-value {
+      display: block;
+      font-size: 22px;
+      font-weight: 900;
+      color: #92400e;
+      line-height: 1;
+    }
+
+    .stat-label {
+      display: block;
+      margin-top: 6px;
+      color: #9a3412;
       font-size: 12px;
+      font-weight: 700;
     }
 
     .tabs {
+      position: sticky;
+      top: max(8px, env(safe-area-inset-top));
+      z-index: 10;
       display: grid;
       grid-template-columns: repeat(3, 1fr);
       gap: 8px;
-      padding: 8px;
-      background: rgba(255,255,255,.8);
-      border: 1px solid var(--line);
-      border-radius: 22px;
       margin-bottom: 16px;
-      position: sticky;
-      top: 8px;
-      z-index: 10;
-      backdrop-filter: blur(10px);
+      padding: 8px;
+      border-radius: 24px;
     }
 
     .tab-btn {
+      min-height: 48px;
       border: 0;
+      border-radius: 18px;
       background: transparent;
-      border-radius: 16px;
-      padding: 12px 10px;
-      font-size: 14px;
-      font-weight: 700;
       color: var(--muted);
+      cursor: pointer;
+      font-weight: 800;
+      transition: transform .18s ease, background .18s ease, color .18s ease;
     }
+
+    .tab-btn:hover { transform: translateY(-1px); }
 
     .tab-btn.active {
       background: linear-gradient(135deg, #fff, #fff7ed);
       color: #92400e;
-      box-shadow: inset 0 0 0 1px #fed7aa;
+      box-shadow: inset 0 0 0 1px #fed7aa, var(--shadow-soft);
     }
 
     .panel { display: none; }
-    .panel.active { display: block; }
+    .panel.active { display: block; animation: fadeIn .18s ease; }
 
-    .card { padding: 18px; }
-    .section-title { font-size: 20px; margin: 0 0 16px; }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .card {
+      padding: clamp(16px, 3vw, 24px);
+      border-radius: var(--radius);
+    }
+
+    .section-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 14px;
+      margin-bottom: 16px;
+    }
+
+    .section-title {
+      margin: 0;
+      font-size: clamp(20px, 3vw, 26px);
+      letter-spacing: -.02em;
+    }
+
+    .section-desc {
+      margin: 6px 0 0;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.7;
+    }
 
     .form-grid {
       display: grid;
-      grid-template-columns: 1.05fr .95fr;
-      gap: 20px;
+      grid-template-columns: minmax(280px, 1.05fr) minmax(280px, .95fr);
+      gap: 22px;
+      align-items: start;
     }
 
-    .upload-box {
-      border: 1px dashed #d1d5db;
+    .upload-box, .quick-card, .filter-bar {
+      border: 1px solid var(--line);
       border-radius: var(--radius);
-      background: #f8fafc;
+      background: rgba(248, 250, 252, .84);
       padding: 14px;
     }
 
+    .drop-zone {
+      border: 2px dashed #d1d5db;
+      border-radius: 22px;
+      background: #fff;
+      transition: border-color .18s ease, background .18s ease;
+    }
+
+    .drop-zone.dragover {
+      border-color: var(--accent);
+      background: #fff7ed;
+    }
+
     .preview {
-      margin-top: 14px;
-      border-radius: var(--radius);
+      min-height: 300px;
+      display: grid;
+      place-items: center;
       overflow: hidden;
-      border: 1px solid var(--line);
-      background: white;
-      min-height: 280px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: #9ca3af;
+      color: #98a2b3;
       text-align: center;
     }
 
     .preview img {
       width: 100%;
       height: 100%;
-      object-fit: cover;
+      max-height: 460px;
+      object-fit: contain;
       display: block;
-      max-height: 420px;
+      background: #111827;
     }
 
-    .field { margin-bottom: 14px; }
+    .preview-placeholder { padding: 34px 14px; }
+    .preview-icon { font-size: 46px; line-height: 1; }
+
+    .field { margin-bottom: 15px; }
+
+    .label-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
 
     .label {
       display: block;
-      margin-bottom: 8px;
       font-size: 14px;
-      font-weight: 700;
+      font-weight: 800;
     }
+
+    .required { color: var(--danger); font-size: 12px; font-weight: 800; }
 
     .input, .select, .textarea, .button {
       width: 100%;
-      border-radius: 18px;
       border: 1px solid var(--line);
+      border-radius: 18px;
       background: white;
       padding: 13px 14px;
       font-size: 16px;
     }
 
-    .textarea { min-height: 120px; resize: vertical; }
+    .textarea { min-height: 126px; resize: vertical; line-height: 1.65; }
 
     .button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      min-height: 48px;
       cursor: pointer;
-      font-weight: 700;
-      transition: .2s ease;
+      font-weight: 850;
+      transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+      user-select: none;
     }
 
-    .button.primary {
-      background: linear-gradient(135deg, var(--accent), var(--accent2));
-      color: white;
-      border: none;
-    }
+    .button:hover { transform: translateY(-1px); box-shadow: var(--shadow-soft); }
+    .button:disabled { opacity: .55; cursor: not-allowed; transform: none; box-shadow: none; }
 
-    .button.secondary {
-      background: white;
-      color: var(--text);
-    }
+    .button.primary { background: linear-gradient(135deg, var(--accent), var(--accent2)); color: white; border: none; }
+    .button.secondary { background: white; color: var(--text); }
+    .button.ghost { background: transparent; color: var(--muted); }
+    .button.danger { background: var(--danger-bg); color: var(--danger); border-color: #fecaca; }
 
-    .button.ghost {
-      background: transparent;
-      color: var(--muted);
-    }
+    .button-row { display: flex; gap: 10px; flex-wrap: wrap; }
+    .button-row .button { flex: 1 1 150px; }
 
-    .button-row {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-    }
+    .muted { color: var(--muted); font-size: 12px; line-height: 1.65; margin-top: 7px; }
 
-    .muted {
-      color: var(--muted);
-      font-size: 12px;
-      line-height: 1.6;
-      margin-top: 6px;
-    }
+    .quick-card { margin-bottom: 16px; }
+    .quick-title { margin: 0 0 10px; font-size: 14px; font-weight: 850; color: #92400e; }
+    .quick-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+    .quick-btn { min-height: 40px; padding: 9px 10px; border-radius: 999px; font-size: 14px; }
 
-    .edit-banner {
+    .edit-banner, .notice {
       display: none;
       margin-bottom: 14px;
       padding: 12px 14px;
       border-radius: 18px;
-      background: #fff7ed;
-      border: 1px solid #fed7aa;
-      color: #9a3412;
       font-size: 14px;
-      line-height: 1.5;
+      line-height: 1.55;
     }
 
-    .edit-banner.show {
-      display: block;
+    .edit-banner.show { display: block; background: #fff7ed; border: 1px solid #fed7aa; color: #9a3412; }
+    .notice.show { display: block; background: var(--success-bg); border: 1px solid #bbf7d0; color: var(--success); }
+    .notice.error { background: var(--danger-bg); border-color: #fecaca; color: var(--danger); }
+
+    .filter-bar {
+      display: grid;
+      grid-template-columns: 1.3fr .85fr .85fr auto;
+      gap: 10px;
+      margin-bottom: 16px;
+      align-items: end;
     }
+
+    .filter-field { margin: 0; }
 
     .records-grid {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
+      grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 16px;
     }
 
-    .record-card {
-      overflow: hidden;
-      padding: 0;
-    }
+    .record-card { overflow: hidden; padding: 0; }
 
-    .record-image {
-      aspect-ratio: 4 / 3;
-      background: #f3f4f6;
-    }
+    .record-image { aspect-ratio: 4 / 3; background: #f3f4f6; }
+    .record-image img { width: 100%; height: 100%; object-fit: cover; display: block; }
 
-    .record-image img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      display: block;
-    }
-
-    .record-body { padding: 14px; }
+    .record-body { padding: 15px; }
 
     .record-head {
       display: flex;
@@ -261,24 +363,17 @@
       margin-bottom: 10px;
     }
 
-    .record-title {
-      font-size: 17px;
-      font-weight: 700;
-      margin: 0 0 4px;
-    }
-
-    .record-date {
-      font-size: 13px;
-      color: var(--muted);
-    }
+    .record-title { margin: 0 0 4px; font-size: 17px; font-weight: 850; line-height: 1.35; }
+    .record-date { color: var(--muted); font-size: 13px; }
 
     .badge {
+      flex: 0 0 auto;
       white-space: nowrap;
+      border: 1px solid transparent;
       border-radius: 999px;
       padding: 7px 10px;
       font-size: 12px;
-      font-weight: 700;
-      border: 1px solid transparent;
+      font-weight: 850;
     }
 
     .fortune-大吉 { background: #dcfce7; color: #166534; border-color: #86efac; }
@@ -291,33 +386,32 @@
     .fortune-大凶 { background: #fee2e2; color: #991b1b; border-color: #fca5a5; }
 
     .record-memo {
+      margin: 0 0 10px;
       color: #475569;
       font-size: 14px;
       line-height: 1.7;
       white-space: pre-wrap;
       word-break: break-word;
-      margin-bottom: 8px;
     }
+
+    .mini-actions { justify-content: flex-end; }
+    .mini-actions .button { width: auto; min-height: 40px; flex: 0 0 auto; padding: 8px 12px; font-size: 13px; }
 
     .empty {
       min-height: 260px;
       display: grid;
       place-items: center;
+      padding: 26px;
       text-align: center;
       color: var(--muted);
     }
 
-    .chart-wrap {
-      position: relative;
-      min-height: 360px;
-    }
+    .empty-emoji { font-size: 42px; line-height: 1; margin-bottom: 10px; }
 
-    .footer-note {
-      margin-top: 14px;
-      color: var(--muted);
-      font-size: 14px;
-      line-height: 1.6;
-    }
+    .chart-wrap { position: relative; min-height: 390px; }
+    .footer-note { margin-top: 14px; color: var(--muted); font-size: 14px; line-height: 1.7; }
+
+    .tools-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 14px; }
 
     .sr-only {
       position: absolute;
@@ -331,138 +425,177 @@
       border: 0;
     }
 
-    @media (max-width: 900px) {
-      .form-grid, .records-grid { grid-template-columns: 1fr; }
-      h1 { font-size: 24px; }
-      .tabs { top: 0; }
+    @media (max-width: 960px) {
+      .hero-top, .form-grid, .filter-bar { grid-template-columns: 1fr; }
+      .stats { min-width: 0; grid-template-columns: repeat(3, 1fr); }
+      .records-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+
+    @media (max-width: 640px) {
+      .wrap { padding: 10px; }
+      .hero, .card { border-radius: 24px; }
+      .tabs { top: 0; border-radius: 0 0 22px 22px; margin-inline: -10px; }
+      .tab-btn { min-height: 46px; font-size: 13px; }
+      .stats, .quick-grid, .records-grid, .tools-grid { grid-template-columns: 1fr; }
+      .section-head { display: block; }
+      .preview { min-height: 230px; }
     }
   </style>
 </head>
 <body>
   <div class="wrap">
-    <div class="hero">
+    <header class="hero">
       <div class="hero-top">
         <div>
+          <div class="eyebrow">⛩️ OMikuji Journal</div>
           <h1>くじレコ</h1>
-          <div class="sub">おみくじの写真、神社仏閣名、記録日、運勢、メモをまとめて保存。運勢の推移はグラフで見返せます。</div>
+          <div class="sub">おみくじの写真・訪れた場所・運勢・メモをすばやく保存。検索、絞り込み、グラフ、バックアップまで1画面で使いやすく整理できます。</div>
         </div>
-        <div class="pill-row">
-          <div class="pill"><span id="recordCount">0</span>件保存中</div>
+        <div class="stats" aria-label="記録の概要">
+          <div class="stat"><span class="stat-value" id="recordCount">0</span><span class="stat-label">保存件数</span></div>
+          <div class="stat"><span class="stat-value" id="bestFortune">-</span><span class="stat-label">最高運勢</span></div>
+          <div class="stat"><span class="stat-value" id="latestDate">-</span><span class="stat-label">最新記録</span></div>
         </div>
       </div>
-    </div>
+    </header>
 
-    <div class="tabs" role="tablist" aria-label="アプリタブ">
-      <button class="tab-btn active" data-tab="record" type="button">記録する</button>
-      <button class="tab-btn" data-tab="list" type="button">一覧</button>
-      <button class="tab-btn" data-tab="graph" type="button">運勢グラフ</button>
-    </div>
+    <nav class="tabs" role="tablist" aria-label="アプリタブ">
+      <button class="tab-btn active" data-tab="record" id="tab-record" role="tab" aria-selected="true" aria-controls="panel-record" type="button">記録する</button>
+      <button class="tab-btn" data-tab="list" id="tab-list" role="tab" aria-selected="false" aria-controls="panel-list" type="button">一覧</button>
+      <button class="tab-btn" data-tab="graph" id="tab-graph" role="tab" aria-selected="false" aria-controls="panel-graph" type="button">運勢グラフ</button>
+    </nav>
 
-    <section class="panel active" id="panel-record">
-      <div class="card">
-        <h2 class="section-title">新しい記録を追加</h2>
+    <main>
+      <section class="panel active" id="panel-record" role="tabpanel" aria-labelledby="tab-record">
+        <div class="card">
+          <div class="section-head">
+            <div>
+              <h2 class="section-title">おみくじを記録</h2>
+              <p class="section-desc">必須項目は写真・場所・日付だけ。写真は自動で軽量化して保存し、スマホでも扱いやすくしました。</p>
+            </div>
+          </div>
 
-        <div class="edit-banner" id="editBanner">
-          編集中です。内容を直して「更新する」を押すと上書き保存されます。
-        </div>
+          <div class="notice" id="notice" role="status" aria-live="polite"></div>
+          <div class="edit-banner" id="editBanner">編集中です。内容を直して「更新する」を押すと上書き保存されます。</div>
 
-        <div class="form-grid">
-          <div>
-            <div class="field">
-              <label class="label" for="photoInput">おみくじ写真</label>
-              <div class="upload-box">
-                <input id="photoInput" type="file" accept="image/*" capture="environment" class="sr-only" />
-                <button class="button secondary" id="photoBtn" type="button">写真を選ぶ / 撮影する</button>
-                <div class="muted">スマホのChromeではカメラ起動候補が表示されることがあります。</div>
-                <div class="preview" id="previewBox">
-                  <div>
-                    <div style="font-size:40px;line-height:1;">🖼️</div>
-                    <div style="margin-top:8px;font-size:14px;">写真プレビュー</div>
+          <div class="form-grid">
+            <div>
+              <div class="field">
+                <div class="label-row"><label class="label" for="photoInput">おみくじ写真</label><span class="required">必須</span></div>
+                <div class="upload-box">
+                  <input id="photoInput" type="file" accept="image/*" capture="environment" class="sr-only" />
+                  <div class="drop-zone" id="dropZone">
+                    <div class="preview" id="previewBox" aria-live="polite"></div>
                   </div>
+                  <div class="button-row" style="margin-top:12px;">
+                    <button class="button secondary" id="photoBtn" type="button">📷 写真を選ぶ / 撮影</button>
+                    <button class="button ghost" id="removePhotoBtn" type="button">写真を外す</button>
+                  </div>
+                  <div class="muted" id="fileNameText"></div>
+                  <div class="muted">PCではドラッグ＆ドロップ、スマホではカメラ起動候補を利用できます。</div>
                 </div>
-                <div class="muted" id="fileNameText"></div>
+              </div>
+            </div>
+
+            <div>
+              <div class="quick-card">
+                <p class="quick-title">よく使う場所をワンタップ入力</p>
+                <div class="quick-grid" id="quickPlaces"></div>
+              </div>
+
+              <div class="field">
+                <div class="label-row"><label class="label" for="templeName">神社仏閣名</label><span class="required">必須</span></div>
+                <input class="input" id="templeName" type="text" placeholder="例：浅草寺" autocomplete="organization" list="placeSuggestions" />
+                <datalist id="placeSuggestions"></datalist>
+              </div>
+
+              <div class="field">
+                <div class="label-row"><label class="label" for="recordDate">記録日</label><span class="required">必須</span></div>
+                <input class="input" id="recordDate" type="date" />
+              </div>
+
+              <div class="field">
+                <label class="label" for="fortuneSelect">運勢</label>
+                <select class="select" id="fortuneSelect">
+                  <option>大吉</option>
+                  <option>半吉</option>
+                  <option selected>吉</option>
+                  <option>中吉</option>
+                  <option>小吉</option>
+                  <option>末吉</option>
+                  <option>凶</option>
+                  <option>大凶</option>
+                </select>
+              </div>
+
+              <div class="field">
+                <label class="label" for="memoInput">メモ</label>
+                <textarea class="textarea" id="memoInput" placeholder="気になった言葉、その日の出来事、感想など"></textarea>
+              </div>
+
+              <div class="button-row">
+                <button class="button primary" id="saveBtn" type="button">保存する</button>
+                <button class="button secondary" id="clearBtn" type="button">入力をクリア</button>
               </div>
             </div>
           </div>
+        </div>
+      </section>
 
-          <div>
-            <div class="field">
-              <label class="label" for="templeName">神社仏閣名</label>
-              <input class="input" id="templeName" type="text" placeholder="例：浅草寺" />
-            </div>
+      <section class="panel" id="panel-list" role="tabpanel" aria-labelledby="tab-list">
+        <div class="filter-bar" aria-label="記録の検索と絞り込み">
+          <div class="field filter-field">
+            <label class="label" for="searchInput">検索</label>
+            <input class="input" id="searchInput" type="search" placeholder="場所・メモで検索" />
+          </div>
+          <div class="field filter-field">
+            <label class="label" for="fortuneFilter">運勢</label>
+            <select class="select" id="fortuneFilter">
+              <option value="all">すべて</option>
+              <option>大吉</option><option>半吉</option><option>吉</option><option>中吉</option><option>小吉</option><option>末吉</option><option>凶</option><option>大凶</option>
+            </select>
+          </div>
+          <div class="field filter-field">
+            <label class="label" for="sortSelect">並び替え</label>
+            <select class="select" id="sortSelect">
+              <option value="date-desc">新しい順</option>
+              <option value="date-asc">古い順</option>
+              <option value="fortune-desc">運勢が良い順</option>
+              <option value="fortune-asc">運勢が低い順</option>
+            </select>
+          </div>
+          <button class="button secondary" id="newRecordBtn" type="button">＋ 新規記録</button>
+        </div>
+        <div id="recordsArea"></div>
+      </section>
 
-            <div class="field">
-              <label class="label" for="recordDate">記録日</label>
-              <input class="input" id="recordDate" type="date" />
-              <div class="muted">写真を選んだ日に自動セットされます。あとから変更もできます。</div>
-            </div>
-
-            <div class="field">
-              <label class="label" for="fortuneSelect">運勢</label>
-              <select class="select" id="fortuneSelect">
-                <option>大吉</option>
-                <option>半吉</option>
-                <option selected>吉</option>
-                <option>中吉</option>
-                <option>小吉</option>
-                <option>末吉</option>
-                <option>凶</option>
-                <option>大凶</option>
-              </select>
-            </div>
-
-            <div class="field">
-              <label class="label" for="memoInput">メモ</label>
-              <textarea class="textarea" id="memoInput" placeholder="気になった言葉、その日の出来事、感想など"></textarea>
-            </div>
-
-            <div class="button-row">
-              <button class="button primary" id="saveBtn" type="button">保存する</button>
-              <button class="button secondary" id="clearBtn" type="button">クリア</button>
+      <section class="panel" id="panel-graph" role="tabpanel" aria-labelledby="tab-graph">
+        <div class="card">
+          <div class="section-head">
+            <div>
+              <h2 class="section-title">運勢の推移</h2>
+              <p class="section-desc">大凶から大吉までを数値化し、時系列で見返せます。</p>
             </div>
           </div>
+          <div id="graphEmpty" class="empty"><div><div class="empty-emoji">📈</div>記録がたまると、ここに運勢の推移が表示されます。</div></div>
+          <div id="graphArea" class="chart-wrap" style="display:none;"><canvas id="fortuneChart"></canvas></div>
+          <div class="tools-grid">
+            <button class="button secondary" id="exportBtn" type="button">バックアップを書き出す</button>
+            <button class="button secondary" id="importBtn" type="button">バックアップを読み込む</button>
+          </div>
+          <input id="importInput" type="file" accept="application/json,.json" class="sr-only" />
+          <div class="footer-note">バックアップはJSON形式です。機種変更やブラウザ変更の前に保存しておくと安心です。</div>
         </div>
-      </div>
-    </section>
-
-    <section class="panel" id="panel-list">
-      <div id="recordsArea"></div>
-    </section>
-
-    <section class="panel" id="panel-graph">
-      <div class="card">
-        <h2 class="section-title">運勢の推移</h2>
-        <div id="graphEmpty" class="empty">記録がたまると、ここに運勢の推移が表示されます。</div>
-        <div id="graphArea" class="chart-wrap" style="display:none;">
-          <canvas id="fortuneChart"></canvas>
-        </div>
-        <div class="footer-note">縦軸は大凶から大吉までを数値化しています。時系列で自分の運勢の流れを見返せます。</div>
-      </div>
-    </section>
+      </section>
+    </main>
   </div>
 
   <script>
-    const STORAGE_KEY = 'omikuji-records-v1';
-    const fortuneLevels = {
-      '大凶': 1,
-      '凶': 2,
-      '末吉': 3,
-      '小吉': 4,
-      '中吉': 5,
-      '吉': 6,
-      '半吉': 7,
-      '大吉': 8,
-    };
-    const levelToFortune = {
-      1: '大凶',
-      2: '凶',
-      3: '末吉',
-      4: '小吉',
-      5: '中吉',
-      6: '吉',
-      7: '半吉',
-      8: '大吉',
-    };
+    const STORAGE_KEY = 'omikuji-records-v2';
+    const LEGACY_STORAGE_KEY = 'omikuji-records-v1';
+    const fortuneLevels = { '大凶': 1, '凶': 2, '末吉': 3, '小吉': 4, '中吉': 5, '吉': 6, '半吉': 7, '大吉': 8 };
+    const levelToFortune = Object.fromEntries(Object.entries(fortuneLevels).map(([key, value]) => [value, key]));
+    const defaultPlaces = ['浅草寺', '明治神宮', '伏見稲荷大社', '太宰府天満宮'];
 
     const state = {
       records: loadRecords(),
@@ -474,27 +607,37 @@
 
     const els = {
       tabs: document.querySelectorAll('.tab-btn'),
-      panels: {
-        record: document.getElementById('panel-record'),
-        list: document.getElementById('panel-list'),
-        graph: document.getElementById('panel-graph'),
-      },
+      panels: { record: document.getElementById('panel-record'), list: document.getElementById('panel-list'), graph: document.getElementById('panel-graph') },
       recordCount: document.getElementById('recordCount'),
+      bestFortune: document.getElementById('bestFortune'),
+      latestDate: document.getElementById('latestDate'),
+      notice: document.getElementById('notice'),
       photoInput: document.getElementById('photoInput'),
       photoBtn: document.getElementById('photoBtn'),
+      removePhotoBtn: document.getElementById('removePhotoBtn'),
+      dropZone: document.getElementById('dropZone'),
       previewBox: document.getElementById('previewBox'),
       fileNameText: document.getElementById('fileNameText'),
       templeName: document.getElementById('templeName'),
+      placeSuggestions: document.getElementById('placeSuggestions'),
+      quickPlaces: document.getElementById('quickPlaces'),
       recordDate: document.getElementById('recordDate'),
       fortuneSelect: document.getElementById('fortuneSelect'),
       memoInput: document.getElementById('memoInput'),
       saveBtn: document.getElementById('saveBtn'),
       clearBtn: document.getElementById('clearBtn'),
       recordsArea: document.getElementById('recordsArea'),
+      searchInput: document.getElementById('searchInput'),
+      fortuneFilter: document.getElementById('fortuneFilter'),
+      sortSelect: document.getElementById('sortSelect'),
+      newRecordBtn: document.getElementById('newRecordBtn'),
       graphEmpty: document.getElementById('graphEmpty'),
       graphArea: document.getElementById('graphArea'),
       fortuneChart: document.getElementById('fortuneChart'),
       editBanner: document.getElementById('editBanner'),
+      exportBtn: document.getElementById('exportBtn'),
+      importBtn: document.getElementById('importBtn'),
+      importInput: document.getElementById('importInput'),
     };
 
     function todayString() {
@@ -506,48 +649,61 @@
     }
 
     function loadRecords() {
+      const current = localStorage.getItem(STORAGE_KEY);
+      const legacy = localStorage.getItem(LEGACY_STORAGE_KEY);
       try {
-        return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+        const parsed = JSON.parse(current || legacy || '[]');
+        return Array.isArray(parsed) ? parsed : [];
       } catch (e) {
         return [];
       }
     }
 
     function saveRecords() {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state.records));
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state.records));
+        return true;
+      } catch (e) {
+        showNotice('保存容量を超えた可能性があります。古い記録を削除するか、写真を変更してください。', 'error');
+        return false;
+      }
+    }
+
+    function showNotice(message, type = 'success') {
+      els.notice.textContent = message;
+      els.notice.classList.toggle('error', type === 'error');
+      els.notice.classList.add('show');
+      clearTimeout(showNotice.timer);
+      showNotice.timer = setTimeout(() => els.notice.classList.remove('show'), 3600);
     }
 
     function switchTab(tabName) {
-      els.tabs.forEach(btn => btn.classList.toggle('active', btn.dataset.tab === tabName));
-      Object.entries(els.panels).forEach(([name, panel]) => {
-        panel.classList.toggle('active', name === tabName);
+      els.tabs.forEach(btn => {
+        const active = btn.dataset.tab === tabName;
+        btn.classList.toggle('active', active);
+        btn.setAttribute('aria-selected', String(active));
       });
+      Object.entries(els.panels).forEach(([name, panel]) => panel.classList.toggle('active', name === tabName));
       if (tabName === 'graph') renderChart();
       if (tabName === 'list') renderList();
     }
 
     function updatePreview() {
       if (!state.imageData) {
-        els.previewBox.innerHTML = `
-          <div>
-            <div style="font-size:40px;line-height:1;">🖼️</div>
-            <div style="margin-top:8px;font-size:14px;">写真プレビュー</div>
-          </div>`;
+        els.previewBox.innerHTML = '<div class="preview-placeholder"><div class="preview-icon">🖼️</div><div style="margin-top:8px;font-size:15px;font-weight:800;">写真プレビュー</div><div class="muted">ここに画像をドロップすることもできます</div></div>';
         els.fileNameText.textContent = '';
+        els.removePhotoBtn.disabled = true;
         return;
       }
       els.previewBox.innerHTML = `<img src="${state.imageData}" alt="おみくじ写真プレビュー">`;
-      els.fileNameText.textContent = state.imageName || '';
+      els.fileNameText.textContent = state.imageName ? `選択中: ${state.imageName}` : '写真を選択中';
+      els.removePhotoBtn.disabled = false;
     }
 
     function updateFormMode() {
-      if (state.editingId) {
-        els.saveBtn.textContent = '更新する';
-        els.editBanner.classList.add('show');
-      } else {
-        els.saveBtn.textContent = '保存する';
-        els.editBanner.classList.remove('show');
-      }
+      const editing = Boolean(state.editingId);
+      els.saveBtn.textContent = editing ? '更新する' : '保存する';
+      els.editBanner.classList.toggle('show', editing);
     }
 
     function resetForm() {
@@ -563,23 +719,68 @@
       updateFormMode();
     }
 
-    function updateCount() {
+    function formatDate(date) {
+      if (!date) return '-';
+      return date.replace(/-/g, '/');
+    }
+
+    function updateStats() {
       els.recordCount.textContent = state.records.length;
+      if (!state.records.length) {
+        els.bestFortune.textContent = '-';
+        els.latestDate.textContent = '-';
+        return;
+      }
+      const best = state.records.reduce((max, record) => Math.max(max, fortuneLevels[record.fortune] || 0), 0);
+      const latest = [...state.records].sort((a, b) => new Date(b.date) - new Date(a.date))[0];
+      els.bestFortune.textContent = levelToFortune[best] || '-';
+      els.latestDate.textContent = formatDate(latest.date).slice(5) || '-';
     }
 
     function escapeHtml(str) {
-      return String(str)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#39;');
+      return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+
+    function uniquePlaces() {
+      const places = [...state.records.map(r => r.name).filter(Boolean), ...defaultPlaces];
+      return [...new Set(places)].slice(0, 8);
+    }
+
+    function renderPlaceHelpers() {
+      const places = uniquePlaces();
+      els.placeSuggestions.innerHTML = places.map(place => `<option value="${escapeHtml(place)}"></option>`).join('');
+      els.quickPlaces.innerHTML = places.slice(0, 4).map(place => `<button class="button secondary quick-btn" type="button" data-place="${escapeHtml(place)}">${escapeHtml(place)}</button>`).join('');
+      els.quickPlaces.querySelectorAll('button').forEach(btn => {
+        btn.addEventListener('click', () => {
+          els.templeName.value = btn.dataset.place;
+          els.templeName.focus();
+        });
+      });
+    }
+
+    function sortRecords(records) {
+      const sortBy = els.sortSelect.value;
+      return [...records].sort((a, b) => {
+        if (sortBy === 'date-asc') return new Date(a.date) - new Date(b.date);
+        if (sortBy === 'fortune-desc') return (fortuneLevels[b.fortune] || 0) - (fortuneLevels[a.fortune] || 0);
+        if (sortBy === 'fortune-asc') return (fortuneLevels[a.fortune] || 0) - (fortuneLevels[b.fortune] || 0);
+        return new Date(b.date) - new Date(a.date);
+      });
+    }
+
+    function filteredRecords() {
+      const keyword = els.searchInput.value.trim().toLowerCase();
+      const fortune = els.fortuneFilter.value;
+      return state.records.filter(record => {
+        const matchesKeyword = !keyword || `${record.name} ${record.memo}`.toLowerCase().includes(keyword);
+        const matchesFortune = fortune === 'all' || record.fortune === fortune;
+        return matchesKeyword && matchesFortune;
+      });
     }
 
     function startEdit(id) {
       const record = state.records.find(r => r.id === id);
       if (!record) return;
-
       state.editingId = id;
       state.imageData = record.imageData;
       state.imageName = record.imageName || '';
@@ -593,58 +794,48 @@
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
+    function deleteRecord(id) {
+      const record = state.records.find(r => r.id === id);
+      if (!record || !confirm(`${record.name} の記録を削除しますか？`)) return;
+      state.records = state.records.filter(r => r.id !== id);
+      if (state.editingId === id) resetForm();
+      if (!saveRecords()) return;
+      renderAll();
+      showNotice('記録を削除しました。');
+    }
+
     function renderList() {
-      updateCount();
+      updateStats();
+      renderPlaceHelpers();
       if (!state.records.length) {
-        els.recordsArea.innerHTML = `
-          <div class="card empty">まだ記録がありません。最初のおみくじを登録してみてください。</div>`;
+        els.recordsArea.innerHTML = '<div class="card empty"><div><div class="empty-emoji">🎋</div><strong>まだ記録がありません</strong><br>最初のおみくじを登録してみてください。</div></div>';
         return;
       }
 
-      const sorted = [...state.records].sort((a, b) => new Date(b.date) - new Date(a.date));
-      els.recordsArea.innerHTML = `<div class="records-grid">${sorted.map(record => `
+      const records = sortRecords(filteredRecords());
+      if (!records.length) {
+        els.recordsArea.innerHTML = '<div class="card empty"><div><div class="empty-emoji">🔎</div><strong>条件に合う記録がありません</strong><br>検索語や運勢の絞り込みを変えてみてください。</div></div>';
+        return;
+      }
+
+      els.recordsArea.innerHTML = `<div class="records-grid">${records.map(record => `
         <article class="card record-card">
-          <div class="record-image">
-            <img src="${record.imageData}" alt="${escapeHtml(record.name)}">
-          </div>
+          <div class="record-image"><img src="${record.imageData}" alt="${escapeHtml(record.name)}のおみくじ写真" loading="lazy"></div>
           <div class="record-body">
             <div class="record-head">
-              <div>
-                <div class="record-title">${escapeHtml(record.name)}</div>
-                <div class="record-date">${escapeHtml(record.date)}</div>
-              </div>
+              <div><h3 class="record-title">${escapeHtml(record.name)}</h3><div class="record-date">${escapeHtml(formatDate(record.date))}</div></div>
               <div class="badge fortune-${record.fortune}">${escapeHtml(record.fortune)}</div>
             </div>
-            ${record.memo ? `<div class="record-memo">${escapeHtml(record.memo)}</div>` : ''}
-            <div class="button-row" style="justify-content:flex-end;">
-              <button class="button ghost edit-btn" type="button" data-id="${record.id}" style="width:auto;padding:8px 10px;color:#92400e;">編集</button>
-              <button class="button ghost delete-btn" type="button" data-id="${record.id}" style="width:auto;padding:8px 10px;color:#64748b;">削除</button>
+            ${record.memo ? `<p class="record-memo">${escapeHtml(record.memo)}</p>` : ''}
+            <div class="button-row mini-actions">
+              <button class="button ghost edit-btn" type="button" data-id="${record.id}" style="color:#92400e;">編集</button>
+              <button class="button danger delete-btn" type="button" data-id="${record.id}">削除</button>
             </div>
           </div>
-        </article>
-      `).join('')}</div>`;
+        </article>`).join('')}</div>`;
 
-      document.querySelectorAll('.edit-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-          startEdit(btn.dataset.id);
-        });
-      });
-
-      document.querySelectorAll('.delete-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-          const id = btn.dataset.id;
-          state.records = state.records.filter(r => r.id !== id);
-
-          if (state.editingId === id) {
-            resetForm();
-          }
-
-          saveRecords();
-          renderList();
-          renderChart();
-          updateCount();
-        });
-      });
+      els.recordsArea.querySelectorAll('.edit-btn').forEach(btn => btn.addEventListener('click', () => startEdit(btn.dataset.id)));
+      els.recordsArea.querySelectorAll('.delete-btn').forEach(btn => btn.addEventListener('click', () => deleteRecord(btn.dataset.id)));
     }
 
     function renderChart() {
@@ -658,149 +849,167 @@
         return;
       }
 
-      const sorted = [...state.records]
-        .sort((a, b) => new Date(a.date) - new Date(b.date));
+      if (typeof Chart === 'undefined') {
+        els.graphEmpty.style.display = 'grid';
+        els.graphEmpty.innerHTML = '<div><div class="empty-emoji">⚠️</div>グラフ機能の読み込みに失敗しました。通信環境を確認して再読み込みしてください。</div>';
+        els.graphArea.style.display = 'none';
+        return;
+      }
 
-      const labels = sorted.map(r => r.date);
+      const sorted = [...state.records].sort((a, b) => new Date(a.date) - new Date(b.date));
+      const labels = sorted.map(r => formatDate(r.date));
       const dataPoints = sorted.map(r => fortuneLevels[r.fortune] || null);
       const detailLabels = sorted.map(r => `${r.fortune}（${r.name}）`);
-
       els.graphEmpty.style.display = 'none';
       els.graphArea.style.display = 'block';
-
       if (state.chart) state.chart.destroy();
 
       state.chart = new Chart(els.fortuneChart, {
         type: 'line',
-        data: {
-          labels,
-          datasets: [{
-            label: '運勢',
-            data: dataPoints,
-            borderWidth: 3,
-            tension: 0.25,
-            pointRadius: 5,
-            pointHoverRadius: 7,
-            fill: false,
-          }]
-        },
+        data: { labels, datasets: [{ label: '運勢', data: dataPoints, borderColor: '#f59e0b', backgroundColor: 'rgba(245, 158, 11, .16)', borderWidth: 3, tension: .28, pointRadius: 5, pointHoverRadius: 8, fill: true }] },
         options: {
           responsive: true,
           maintainAspectRatio: false,
-          interaction: {
-            mode: 'nearest',
-            intersect: false,
-          },
-          plugins: {
-            legend: { display: false },
-            tooltip: {
-              callbacks: {
-                title(items) {
-                  return `日付: ${items[0].label}`;
-                },
-                label(context) {
-                  return detailLabels[context.dataIndex];
-                }
-              }
-            }
-          },
-          scales: {
-            y: {
-              min: 1,
-              max: 8,
-              ticks: {
-                stepSize: 1,
-                callback(value) {
-                  return levelToFortune[value] || '';
-                }
-              }
-            }
-          }
+          interaction: { mode: 'nearest', intersect: false },
+          plugins: { legend: { display: false }, tooltip: { callbacks: { title: items => `日付: ${items[0].label}`, label: context => detailLabels[context.dataIndex] } } },
+          scales: { y: { min: 1, max: 8, ticks: { stepSize: 1, callback: value => levelToFortune[value] || '' } } }
         }
       });
     }
 
-    els.tabs.forEach(btn => {
-      btn.addEventListener('click', () => switchTab(btn.dataset.tab));
-    });
+    function renderAll() {
+      updateStats();
+      renderPlaceHelpers();
+      renderList();
+      renderChart();
+    }
 
-    els.photoBtn.addEventListener('click', () => els.photoInput.click());
+    function resizeImage(file, maxSize = 1400, quality = .82) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onerror = reject;
+        reader.onload = () => {
+          const img = new Image();
+          img.onerror = reject;
+          img.onload = () => {
+            const scale = Math.min(1, maxSize / Math.max(img.width, img.height));
+            const canvas = document.createElement('canvas');
+            canvas.width = Math.round(img.width * scale);
+            canvas.height = Math.round(img.height * scale);
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            resolve(canvas.toDataURL('image/jpeg', quality));
+          };
+          img.src = String(reader.result || '');
+        };
+        reader.readAsDataURL(file);
+      });
+    }
 
-    els.photoInput.addEventListener('change', () => {
-      const file = els.photoInput.files && els.photoInput.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = () => {
-        state.imageData = String(reader.result || '');
+    async function handleImageFile(file) {
+      if (!file || !file.type.startsWith('image/')) {
+        showNotice('画像ファイルを選んでください。', 'error');
+        return;
+      }
+      try {
+        state.imageData = await resizeImage(file);
         state.imageName = file.name;
-        els.recordDate.value = todayString();
+        if (!els.recordDate.value) els.recordDate.value = todayString();
         updatePreview();
-      };
-      reader.readAsDataURL(file);
-    });
+      } catch (e) {
+        showNotice('写真の読み込みに失敗しました。別の画像でお試しください。', 'error');
+      }
+    }
 
-    els.saveBtn.addEventListener('click', () => {
+    function buildRecordPayload() {
       const name = els.templeName.value.trim();
       const date = els.recordDate.value;
       const fortune = els.fortuneSelect.value;
       const memo = els.memoInput.value.trim();
+      if (!state.imageData) return showNotice('おみくじの写真を選んでください。', 'error');
+      if (!name) return showNotice('神社仏閣名を入力してください。', 'error');
+      if (!date) return showNotice('日付を入力してください。', 'error');
+      return { imageData: state.imageData, imageName: state.imageName, name, date, fortune, memo };
+    }
 
-      if (!state.imageData) {
-        alert('おみくじの写真を選んでください。');
-        return;
-      }
-      if (!name) {
-        alert('神社仏閣名を入力してください。');
-        return;
-      }
-      if (!date) {
-        alert('日付を入力してください。');
-        return;
-      }
+    function exportRecords() {
+      const blob = new Blob([JSON.stringify({ exportedAt: new Date().toISOString(), records: state.records }, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `kuji-records-${todayString()}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
 
+    function importRecords(file) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const payload = JSON.parse(String(reader.result || '{}'));
+          const records = Array.isArray(payload) ? payload : payload.records;
+          if (!Array.isArray(records)) throw new Error('invalid');
+          state.records = records.filter(r => r && r.id && r.name && r.date && r.fortune && r.imageData);
+          if (!saveRecords()) return;
+          renderAll();
+          showNotice(`${state.records.length}件のバックアップを読み込みました。`);
+        } catch (e) {
+          showNotice('バックアップファイルを読み込めませんでした。', 'error');
+        } finally {
+          els.importInput.value = '';
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    els.tabs.forEach(btn => btn.addEventListener('click', () => switchTab(btn.dataset.tab)));
+    els.photoBtn.addEventListener('click', () => els.photoInput.click());
+    els.removePhotoBtn.addEventListener('click', () => { state.imageData = ''; state.imageName = ''; els.photoInput.value = ''; updatePreview(); });
+    els.photoInput.addEventListener('change', () => handleImageFile(els.photoInput.files && els.photoInput.files[0]));
+    ['dragenter', 'dragover'].forEach(eventName => els.dropZone.addEventListener(eventName, event => { event.preventDefault(); els.dropZone.classList.add('dragover'); }));
+    ['dragleave', 'drop'].forEach(eventName => els.dropZone.addEventListener(eventName, event => { event.preventDefault(); els.dropZone.classList.remove('dragover'); }));
+    els.dropZone.addEventListener('drop', event => handleImageFile(event.dataTransfer.files && event.dataTransfer.files[0]));
+
+    els.saveBtn.addEventListener('click', () => {
+      const payload = buildRecordPayload();
+      if (!payload) return;
       if (state.editingId) {
         const target = state.records.find(r => r.id === state.editingId);
         if (!target) {
-          alert('編集対象が見つかりませんでした。');
+          showNotice('編集対象が見つかりませんでした。', 'error');
           resetForm();
           return;
         }
-
-        target.imageData = state.imageData;
-        target.imageName = state.imageName;
-        target.name = name;
-        target.date = date;
-        target.fortune = fortune;
-        target.memo = memo;
+        Object.assign(target, payload, { updatedAt: new Date().toISOString() });
+        showNotice('記録を更新しました。');
       } else {
-        state.records.unshift({
-          id: crypto.randomUUID(),
-          imageData: state.imageData,
-          imageName: state.imageName,
-          name,
-          date,
-          fortune,
-          memo,
-          createdAt: new Date().toISOString(),
-        });
+        const id = globalThis.crypto && typeof globalThis.crypto.randomUUID === 'function' ? globalThis.crypto.randomUUID() : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+        state.records.unshift({ id, ...payload, createdAt: new Date().toISOString() });
+        showNotice('記録を保存しました。');
       }
-
-      saveRecords();
-      updateCount();
-      renderList();
-      renderChart();
+      if (!saveRecords()) return;
       resetForm();
+      renderAll();
       switchTab('list');
     });
 
     els.clearBtn.addEventListener('click', resetForm);
+    els.newRecordBtn.addEventListener('click', () => { resetForm(); switchTab('record'); });
+    [els.searchInput, els.fortuneFilter, els.sortSelect].forEach(el => {
+      el.addEventListener('input', renderList);
+      el.addEventListener('change', renderList);
+    });
+    els.exportBtn.addEventListener('click', exportRecords);
+    els.importBtn.addEventListener('click', () => els.importInput.click());
+    els.importInput.addEventListener('change', () => {
+      const file = els.importInput.files && els.importInput.files[0];
+      if (file) importRecords(file);
+    });
 
     els.recordDate.value = todayString();
     updatePreview();
     updateFormMode();
-    updateCount();
-    renderList();
-    renderChart();
+    renderAll();
   </script>
 </body>
 </html>
